@@ -15,13 +15,26 @@ openai.api_key = api_key
 st.title("SEO Article writer")
 
 def generate_article(keyword, writing_style, word):
-    response = openai.Completion.create(
-        model="text-davinci-003",  # Change the model as needed
-        prompt=f"Write a SEO optimized {word} word article about {keyword} in style {writing_style}.",
-        max_tokens=word * 5  # Rough estimate for word to token conversion
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": "Write a SEO optimized word article about " + keyword},
+            {"role": "user", "content": "This article should be in style " + writing_style},
+            {"role": "user", "content": "The article length should be " + str(word)}
+        ],
+        headers=headers  # Pass the headers containing the API key
     )
 
-    return response.choices[0].text.strip()
+    result = ''
+    for choice in response.choices:
+        result += choice.message.content
+
+    return result
 
 keyword = st.text_input("Enter the topic of your article")
 writing_style = st.selectbox("Select a writing style", ["Balanced", "Creative", "Precise"])
@@ -31,8 +44,7 @@ submit_button = st.button("Generate Article")
 if submit_button:
     message = st.empty()
     message.text("Generating article....")
-    article = generate_article(keyword, writing_style, word_count)
+    article = generate_article(keyword, writing_style, word_count)  # Don't need to pass api_key
     message.text("")
     st.write(article)
     st.download_button(label="Download Article", data=article, file_name="article.txt", mime="text/plain")
-
